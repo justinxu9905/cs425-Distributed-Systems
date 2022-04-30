@@ -1,0 +1,4 @@
+OK
+A.a = 10
+B.b = 10
+COMMIT OK

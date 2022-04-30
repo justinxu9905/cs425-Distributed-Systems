@@ -1,0 +1,1 @@
+go build -o mp1_node main.go

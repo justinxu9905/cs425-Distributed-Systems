@@ -1,0 +1,2 @@
+BEGIN
+WITHDRAW A.b 10

@@ -1,0 +1,9 @@
+8
+node1 sp22-cs425-g53-01.cs.illinois.edu 1234
+node2 sp22-cs425-g53-02.cs.illinois.edu 1234
+node3 sp22-cs425-g53-03.cs.illinois.edu 1234
+node4 sp22-cs425-g53-04.cs.illinois.edu 1234
+node5 sp22-cs425-g53-05.cs.illinois.edu 1234
+node6 sp22-cs425-g53-06.cs.illinois.edu 1234
+node7 sp22-cs425-g53-07.cs.illinois.edu 1234
+node8 sp22-cs425-g53-08.cs.illinois.edu 1234
