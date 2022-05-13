@@ -52,6 +52,7 @@ func (t TransactionHandler) Execute(ctx context.Context, req *rpc.ExecuteRequest
 }
 
 func (t TransactionHandler) Committable(ctx context.Context, req *rpc.CommittableRequest) (_r *rpc.CommittableResponse, _err error) {
+	//fmt.Printf("[Committable Handler] try to check %v\n", req.Timestamp)
 	resp := &rpc.CommittableResponse{
 		Ok: t.Mgr.Committable(req.Timestamp),
 	}
@@ -59,6 +60,7 @@ func (t TransactionHandler) Committable(ctx context.Context, req *rpc.Committabl
 }
 
 func (t TransactionHandler) Commit(ctx context.Context, req *rpc.CommitRequest) (_r *rpc.CommitResponse, _err error) {
+	//fmt.Printf("[Commit Handler] try to commit %v\n", req.Timestamp)
 	resp := &rpc.CommitResponse{
 		Ok: t.Mgr.Commit(req.Timestamp),
 	}
@@ -75,11 +77,12 @@ func (t TransactionHandler) Connect(ctx context.Context, req *rpc.ConnectRequest
 	resp := &rpc.ConnectResponse{
 		Ok: true,
 	}
-	//fmt.Printf("connect with client %v\n", req.ClientId)
+	//fmt.Printf("[Connect Handler] connect with client %v\n", req.ClientId)
 	return resp, nil
 }
 
 func (t TransactionHandler) Prepare(ctx context.Context, req *rpc.PrepareRequest) (_r *rpc.PrepareResponse, _err error) {
+	//fmt.Printf("[Prepare Handler] try to execute %v\n", req.Op)
 	resp := &rpc.PrepareResponse{}
 	switch req.Op.Op {
 	case "BEGIN":
@@ -121,9 +124,11 @@ func (t TransactionHandler) Prepare(ctx context.Context, req *rpc.PrepareRequest
 		resp.Ok = true
 		resp.Msg = "COMMIT OK"
 		for _, node := range t.NodeGroup {
+			//fmt.Printf("try %v commitable\n", id)
 			r, _ := node.Committable(ctx, &rpc.CommittableRequest{
 				Timestamp: t.ClientTimestampMap[req.ClientId],
 			})
+			//fmt.Printf("%v commitable finished\n", id)
 			if !r.Ok {
 				resp.Ok = r.Ok
 				resp.Msg = "ABORTED"
@@ -138,6 +143,14 @@ func (t TransactionHandler) Prepare(ctx context.Context, req *rpc.PrepareRequest
 			}
 		}
 		break
+	case "ABORT":
+		resp.Ok = false
+		resp.Msg = "ABORTED"
+		for _, node := range t.NodeGroup {
+			_, _ = node.Abort(ctx, &rpc.AbortRequest{
+				Timestamp: t.ClientTimestampMap[req.ClientId],
+			})
+		}
 	}
 	return resp, nil
 }
@@ -150,6 +163,7 @@ func (t TransactionHandler) Confirm(ctx context.Context, req *rpc.ConfirmRequest
 		r, _ := node.Commit(ctx, &rpc.CommitRequest{
 			Timestamp: t.ClientTimestampMap[req.ClientId],
 		})
+		//fmt.Printf("%v commit finished\n", id)
 		if !r.Ok {
 			resp.Ok = r.Ok
 			break

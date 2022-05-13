@@ -130,10 +130,6 @@ func (mgr *TransactionMgr) execute(timestamp int64, op Operation) (error, int) {
 			return common.ErrorIsolationViolated, 0
 		}
 		if prev == -1 {
-			ok = mgr.write(timestamp, op.Acct, 0)
-			if !ok {
-				return common.ErrorIsolationViolated, 0
-			}
 			prev = 0
 		}
 		ok = mgr.write(timestamp, op.Acct, prev + op.Amt)
@@ -159,19 +155,18 @@ func (mgr *TransactionMgr) execute(timestamp int64, op Operation) (error, int) {
 
 func (mgr *TransactionMgr) read(timestamp int64, obj string) (int, bool) {
 	defer mgr.lock.Unlock()
+	mgr.Log(fmt.Sprintf("[read] reading obj %v in tx %v\n", obj, timestamp))
 read:
 	mgr.lock.Lock()
-	mgr.Log(fmt.Sprintf("[read] reading obj %v in tx %v\n", obj, timestamp))
 	state, ok := mgr.perObjectState[obj]
 	if !ok {
-		/*mgr.perObjectState[obj] = &ObjectState{
+		mgr.perObjectState[obj] = &ObjectState{
 			committedValue: 0,
 			committedTimestamp: 0,
 			readTimestamps: []int64{},
 			tentativeWrites: []*TentativeWrite{},
 		}
-		state, _ = mgr.perObjectState[obj]*/
-		return -1, true
+		state = mgr.perObjectState[obj]
 	}
 
 	if timestamp > state.committedTimestamp {
@@ -186,7 +181,11 @@ read:
 
 		if latestWriteTimestamp <= state.committedTimestamp {
 			state.readTimestamps = append(state.readTimestamps, timestamp)
-			sort.Stable(state.readTimestamps)
+			sort.Sort(state.readTimestamps)
+			if latestWriteTimestamp == 0 {
+				mgr.Log(fmt.Sprintf("[read] non-exist object, and current rts = %v\n", state.readTimestamps))
+				return -1, true
+			}
 			mgr.Log(fmt.Sprintf("[read] get previously committed value %v = %v, and current rts = %v\n", obj, latestValue, state.readTimestamps))
 			return latestValue, true
 		} else {
@@ -196,7 +195,7 @@ read:
 			} else {
 				mgr.lock.Unlock()
 				time.Sleep(5 * time.Millisecond)
-				goto read //bug
+				goto read
 			}
 		}
 	} else {
@@ -239,9 +238,9 @@ func (mgr *TransactionMgr) write(timestamp int64, obj string, val int) bool {
 
 func (mgr *TransactionMgr) commit(timestamp int64) {
 	defer mgr.lock.Unlock()
+	mgr.Log(fmt.Sprintf("\n[commit] committing tx %v\n", timestamp))
 	commit:
 	mgr.lock.Lock()
-	mgr.Log(fmt.Sprintf("\n[commit] committing tx %v\n", timestamp))
 	for obj, state := range mgr.perObjectState {
 		mgr.stableObject[obj] = true
 		for i, tw := range state.tentativeWrites {
@@ -279,7 +278,9 @@ func (mgr *TransactionMgr) abort(timestamp int64) {
 }
 
 func (mgr *TransactionMgr) checkConsistency(timestamp int64) bool {
+	mgr.Log(fmt.Sprintf("\n[checkConsistency] check tx %v started\n", timestamp))
 	mgr.lock.Lock()
+	mgr.Log(fmt.Sprintf("\n[checkConsistency] check tx %v get lock\n", timestamp))
 	defer mgr.lock.Unlock()
 	for _, state := range mgr.perObjectState {
 		for _, tw := range state.tentativeWrites {

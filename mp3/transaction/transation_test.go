@@ -180,9 +180,9 @@ func TestConcurrency2Tx(t *testing.T) {
 
 func TestConcurrency3Tx(t *testing.T) {
 	mgr := NewTransactionMgr()
-	tx1, exp1 := generateValidTransaction(100)
-	tx2, exp2 := generateValidTransaction(200)
-	tx3, exp3 := generateValidTransaction(500)
+	tx1, exp1 := generateValidTransaction(1000)
+	tx2, exp2 := generateValidTransaction(2000)
+	tx3, exp3 := generateValidTransaction(5000)
 
 	var wg sync.WaitGroup
 	wg.Add(3)

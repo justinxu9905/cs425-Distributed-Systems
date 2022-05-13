@@ -88,7 +88,7 @@ func main() {
 			for scanner.Scan() {
 				input = scanner.Text()
 
-				if strings.Split(input, " ")[0] != "DEPOSIT" && strings.Split(input, " ")[0] != "WITHDRAW" && strings.Split(input, " ")[0] != "BALANCE" && strings.Split(input, " ")[0] != "COMMIT" {
+				if strings.Split(input, " ")[0] != "DEPOSIT" && strings.Split(input, " ")[0] != "WITHDRAW" && strings.Split(input, " ")[0] != "BALANCE" && strings.Split(input, " ")[0] != "COMMIT" && strings.Split(input, " ")[0] != "ABORT" {
 					continue
 				}
 
@@ -97,7 +97,7 @@ func main() {
 				if strings.Split(input, " ")[0] == "BALANCE" {
 					acct = strings.Split(input, " ")[1]
 					amt = 0
-				} else if strings.Split(input, " ")[0] == "COMMIT" {
+				} else if strings.Split(input, " ")[0] == "COMMIT" || strings.Split(input, " ")[0] == "ABORT" {
 					acct = ""
 					amt = 0
 				} else {
